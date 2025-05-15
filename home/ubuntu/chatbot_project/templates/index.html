@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente Pessoal - Ricardo Borba</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 80vh; /* Altura ajustável */
+        }
+        #chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        #chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            line-height: 1.4;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto; /* Alinha à direita */
+        }
+        .bot-message {
+            background-color: #e9e9eb;
+            color: #333;
+            align-self: flex-start;
+            margin-right: auto; /* Alinha à esquerda */
+        }
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 1em;
+        }
+        #send-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+        .loading-indicator {
+            text-align: center;
+            padding: 10px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">Assistente Pessoal - Ricardo Borba</div>
+        <div id="chat-messages"></div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Digite sua mensagem...">
+            <button id="send-button">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        let chatHistory = []; // Formato: [{role: "user"/"model", text: "..."}]
+
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            if (sender === 'user') {
+                messageDiv.classList.add('user-message');
+                messageDiv.textContent = `Você: ${text}`;
+            } else {
+                messageDiv.classList.add('bot-message');
+                messageDiv.textContent = `Bot: ${text}`;
+            }
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll
+        }
+
+        function showLoading(isLoading) {
+            let loadingDiv = document.getElementById('loading-indicator');
+            if (isLoading) {
+                if (!loadingDiv) {
+                    loadingDiv = document.createElement('div');
+                    loadingDiv.id = 'loading-indicator';
+                    loadingDiv.classList.add('loading-indicator');
+                    loadingDiv.textContent = 'Bot está digitando...';
+                    chatMessages.appendChild(loadingDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            } else {
+                if (loadingDiv) {
+                    loadingDiv.remove();
+                }
+            }
+        }
+
+        async function sendMessage() {
+            const messageText = userInput.value.trim();
+            if (messageText === '') return;
+
+            addMessage('user', messageText);
+            // Adiciona a mensagem do usuário ao histórico para enviar ao backend
+            chatHistory.push({ role: "user", text: messageText });
+            userInput.value = '';
+            showLoading(true);
+            sendButton.disabled = true;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: messageText,
+                        history: chatHistory.slice(0, -1) // Envia o histórico *antes* da mensagem atual do usuário
+                    }),
+                });
+
+                showLoading(false);
+                sendButton.disabled = false;
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    addMessage('bot', `Erro: ${errorData.detail || response.statusText}`);
+                    // Remove a última mensagem do usuário do histórico se houve erro para não reenviar
+                    chatHistory.pop(); 
+                    return;
+                }
+
+                const data = await response.json();
+                addMessage('bot', data.response);
+                // Adiciona a resposta do bot ao histórico
+                chatHistory.push({ role: "model", text: data.response });
+
+            } catch (error) {
+                showLoading(false);
+                sendButton.disabled = false;
+                addMessage('bot', 'Erro ao conectar com o servidor. Tente novamente.');
+                console.error('Fetch error:', error);
+                // Remove a última mensagem do usuário do histórico se houve erro
+                chatHistory.pop(); 
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Mensagem inicial do bot (opcional, pode ser via API ou fixa)
+        addMessage('bot', 'Olá! Como posso te ajudar hoje?');
+
+    </script>
+</body>
+</html>
