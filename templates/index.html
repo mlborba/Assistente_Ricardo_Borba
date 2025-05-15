@@ -5,90 +5,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assistente Pessoal - Ricardo Borba</title>
     <style>
-        body {
-            font-family: sans-serif;
+        /* Estilos gerais e reset */
+        * {
             margin: 0;
-            background-color: #f4f4f9;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            box-sizing: border-box;
         }
+        
+        /* Container principal */
         #chat-container {
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            height: 80vh;
+            height: 85vh;
+            transition: all 0.3s ease;
         }
+        
+        /* Cabeçalho do chat */
         #chat-header {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #0062E6 0%, #33A1FD 100%);
             color: white;
-            padding: 15px;
+            padding: 18px;
             text-align: center;
-            font-size: 1.2em;
+            font-size: 1.4em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+        
+        /* Área de mensagens */
         #chat-messages {
             flex-grow: 1;
-            padding: 20px;
+            padding: 25px;
             overflow-y: auto;
-            border-bottom: 1px solid #ddd;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
+        
+        /* Estilo das mensagens */
         .message {
-            margin-bottom: 15px;
-            padding: 10px 15px;
-            border-radius: 20px;
-            line-height: 1.4;
+            padding: 12px 18px;
+            border-radius: 18px;
+            line-height: 1.5;
             max-width: 80%;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            white-space: pre-line; /* Preserva quebras de linha */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Mensagem do usuário */
         .user-message {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #0062E6 0%, #33A1FD 100%);
             color: white;
             align-self: flex-end;
             margin-left: auto;
+            border-bottom-right-radius: 4px;
         }
+        
+        /* Mensagem do bot */
         .bot-message {
-            background-color: #e9e9eb;
+            background: white;
             color: #333;
             align-self: flex-start;
             margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border-left: 4px solid #0062E6;
         }
+        
+        /* Área de input */
         #input-area {
             display: flex;
-            padding: 15px;
-            border-top: 1px solid #ddd;
-            background-color: #f8f9fa;
+            padding: 15px 20px;
+            background-color: white;
+            border-top: 1px solid #eaeaea;
         }
+        
         #user-input {
             flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            margin-right: 10px;
+            padding: 12px 18px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            margin-right: 12px;
             font-size: 1em;
+            transition: all 0.3s;
+            outline: none;
         }
+        
+        #user-input:focus {
+            border-color: #0062E6;
+            box-shadow: 0 0 0 2px rgba(0, 98, 230, 0.2);
+        }
+        
         #send-button {
-            padding: 10px 20px;
-            background-color: #007bff;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #0062E6 0%, #33A1FD 100%);
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: 24px;
             cursor: pointer;
             font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
         }
+        
         #send-button:hover {
-            background-color: #0056b3;
+            background: linear-gradient(135deg, #0051c3 0%, #1e8df9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+        
+        #send-button:active {
+            transform: translateY(0);
+        }
+        
+        /* Indicador de carregamento */
         .loading-indicator {
             text-align: center;
             padding: 10px;
             color: #777;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        
+        .loading-dots {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: #0062E6;
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .loading-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        /* Formatação de texto nas mensagens do bot */
+        .bot-message strong, .bot-message b {
+            font-weight: 700;
+        }
+        
+        .bot-message em, .bot-message i {
+            font-style: italic;
+        }
+        
+        .bot-message code {
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        /* Media queries para responsividade */
+        @media (max-width: 768px) {
+            #chat-container {
+                height: 90vh;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 0;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            #chat-header {
+                font-size: 1.2em;
+                padding: 15px;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1200px) {
+            #chat-container {
+                max-width: 700px;
+                height: 80vh;
+            }
+        }
+        
+        @media (min-width: 1201px) {
+            #chat-container {
+                max-width: 900px;
+                height: 75vh;
+            }
+            
+            #chat-messages {
+                padding: 30px;
+            }
+            
+            .message {
+                max-width: 70%;
+                padding: 15px 20px;
+            }
         }
     </style>
 </head>
@@ -108,30 +255,69 @@
         const sendButton = document.getElementById('send-button');
         let chatHistory = [];
 
+        // Função para formatar texto com marcações básicas
+        function formatText(text) {
+            // Preserva quebras de linha
+            text = text.replace(/\n/g, '<br>');
+            
+            // Formatação básica (negrito, itálico, código)
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            text = text.replace(/`(.*?)`/g, '<code>$1</code>');
+            
+            return text;
+        }
+
         function addMessage(sender, text) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message');
+            
             if (sender === 'user') {
                 messageDiv.classList.add('user-message');
                 messageDiv.textContent = `Você: ${text}`;
             } else {
                 messageDiv.classList.add('bot-message');
-                messageDiv.textContent = `Bot: ${text}`;
+                // Usar innerHTML para permitir formatação HTML
+                messageDiv.innerHTML = `Bot: ${formatText(text)}`;
             }
+            
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Animação suave de scroll
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
         }
 
         function showLoading(isLoading) {
             let loadingDiv = document.getElementById('loading-indicator');
+            
             if (isLoading) {
                 if (!loadingDiv) {
                     loadingDiv = document.createElement('div');
                     loadingDiv.id = 'loading-indicator';
                     loadingDiv.classList.add('loading-indicator');
-                    loadingDiv.textContent = 'Bot está digitando...';
+                    
+                    const loadingText = document.createElement('span');
+                    loadingText.textContent = 'Bot está digitando';
+                    loadingDiv.appendChild(loadingText);
+                    
+                    const dotsContainer = document.createElement('div');
+                    dotsContainer.classList.add('loading-dots');
+                    
+                    for (let i = 0; i < 3; i++) {
+                        const dot = document.createElement('span');
+                        dotsContainer.appendChild(dot);
+                    }
+                    
+                    loadingDiv.appendChild(dotsContainer);
                     chatMessages.appendChild(loadingDiv);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    chatMessages.scrollTo({
+                        top: chatMessages.scrollHeight,
+                        behavior: 'smooth'
+                    });
                 }
             } else {
                 if (loadingDiv) {
@@ -192,7 +378,17 @@
             }
         });
 
-        addMessage('bot', 'Olá! Como posso te ajudar hoje?');
+        // Foco automático no campo de entrada ao carregar a página
+        window.addEventListener('load', function() {
+            userInput.focus();
+        });
+
+        // Mensagem inicial do bot com animação de digitação
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                addMessage('bot', 'Olá! Como posso te ajudar hoje?');
+            }, 500);
+        });
     </script>
 </body>
 </html>
